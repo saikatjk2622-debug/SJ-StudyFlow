@@ -556,15 +556,28 @@ export default function SJStudyFlow() {
     const q=aiInput.trim();
     setAiMsgs(m=>[...m,{role:"user",content:q}]); setAiInput(""); setAiLoading(true);
     try {
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:`Study assistant.${aiSub?` Subject: ${aiSub}.`:""} Help clearly.`,messages:[...aiMsgs,{role:"user",content:q}].slice(-10)})});
+      const msgs = [...aiMsgs,{role:"user",content:q}].slice(-10);
+      const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer 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"},
+        body:JSON.stringify({
+          model:"llama-3.3-70b-versatile",
+          max_tokens:1000,
+          messages:[
+            {role:"system",content:`You are an expert study assistant.${aiSub?` Subject: ${aiSub}.`:""} Help students understand clearly with examples. Be concise and friendly.`},
+            ...msgs
+          ]
+        })
+      });
       const d=await res.json();
-      setAiMsgs(m=>[...m,{role:"assistant",content:d.content?.map(c=>c.text||"").join("")||"Error."}]);
-    } catch { setAiMsgs(m=>[...m,{role:"assistant",content:"⚠️ Error. Retry karein."}]); }
+      const reply = d.choices?.[0]?.message?.content || "Sorry, answer nahi mila.";
+      setAiMsgs(m=>[...m,{role:"assistant",content:reply}]);
+    } catch { setAiMsgs(m=>[...m,{role:"assistant",content:"⚠️ Connection error. Retry karein."}]); }
     setAiLoading(false);
   };
 
   const S = {
-    app:{minHeight:"100vh",background:th.bg,color:th.text,fontFamily:"'Nunito',sans-serif",paddingBottom:80},
+    app:{minHeight:"100vh",background:th.bg,color:th.text,fontFamily:"'Nunito',sans-serif",paddingBottom:80,WebkitOverflowScrolling:"touch",overflowX:"hidden"},
     header:{background:th.card,borderBottom:`1px solid ${th.border}`,padding:"14px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100},
     logo:{fontSize:18,fontWeight:900,background:`linear-gradient(135deg,${th.accent},${th.accent2})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"},
     nav:{position:"fixed",bottom:0,left:0,right:0,background:th.card,borderTop:`1px solid ${th.border}`,display:"flex",zIndex:100,padding:"8px 0 12px"},
@@ -573,7 +586,7 @@ export default function SJStudyFlow() {
     card:{background:th.card,borderRadius:16,padding:20,marginBottom:16,border:`1px solid ${th.border}`},
     card2:{background:th.card2,borderRadius:12,padding:16,marginBottom:12,border:`1px solid ${th.border}`},
     h3:{fontSize:11,fontWeight:700,color:th.sub,textTransform:"uppercase",letterSpacing:1,margin:"0 0 12px"},
-    inp:{width:"100%",background:th.card2,border:`1px solid ${th.border}`,borderRadius:10,padding:"10px 14px",color:th.text,fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit"},
+    inp:{width:"100%",background:th.card2,border:`1px solid ${th.border}`,borderRadius:10,padding:"12px 14px",color:th.text,fontSize:16,outline:"none",boxSizing:"border-box",fontFamily:"inherit",WebkitAppearance:"none"},
     btn:(c=th.accent)=>({background:c,color:c===th.accent?"#0A0E1A":"#fff",border:"none",borderRadius:10,padding:"10px 18px",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:6,fontFamily:"inherit"}),
     ghost:{background:"transparent",border:`1px solid ${th.border}`,borderRadius:10,padding:"8px 14px",fontSize:12,fontWeight:600,cursor:"pointer",color:th.sub,display:"flex",alignItems:"center",gap:4,fontFamily:"inherit"},
     tag:(c)=>({background:c+"22",color:c,padding:"3px 10px",borderRadius:20,fontSize:11,fontWeight:700}),
